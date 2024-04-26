@@ -1,7 +1,6 @@
 import os, sys
 import xml.etree.ElementTree as ET
 from zipfile import ZipFile
-import json
 #import xy2do
 import cProfile
 from functools import lru_cache
@@ -128,34 +127,6 @@ def extractGyouseiLineFromSyudai(syudaiarray):
 
 
 # 空間属性:Curve
-def extractCurve_org(areaarray):
-    area_curve = areaarray.findall(swns_zmn("GM_Curve"))
-    curves_info = []    
-    for curve in area_curve:
-        curve_id = curve.attrib["id"]
-        cv1=curve.find(swns_zmn("GM_Curve.segment"))
-        cv2=cv1.find(swns_zmn("GM_LineString"))
-        cv3=cv2.find(swns_zmn("GM_LineString.controlPoint"))
-        #cv4=cv3.find(swns_zmn("GM_PointArray.column"))
-        no=1
-        for cv in cv3:
-            #directAddress
-            (x,y) = getXY(cv, "GM_Position.direct", PRM_NS_ZMN)
-            #indireectAddress
-            cv5 = cv.find(swns_zmn("GM_Position.indirect"))
-            point_id = ""
-            if (not cv5 is None):
-                point_id=cv5.find(swns_zmn("GM_PointRef.point")).attrib["idref"]
-            curves_info.append({
-                'curve_id': curve_id,
-                'x': x,
-                'y': y,
-                'point_id': point_id,
-                'num': no
-            })
-            no = no + 1
-    return curves_info
-
 def extractCurve(areaarray):
     area_curve = areaarray.findall(swns_zmn("GM_Curve"))
     curves_info = []  
@@ -330,6 +301,8 @@ def main():
             with zf.open(zf.namelist()[0]) as fd:
                 tree = ET.parse(fd)
                 root = tree.getroot()
+                areaarray = root.find(swns("空間属性"))
+                syudaiarray = root.find(swns("主題属性"))
 
                 #基本情報を変数に保持
                 basic_info = extractBasicInfo(root)
@@ -338,13 +311,11 @@ def main():
 
                 #----- POINT ------
                 #空間属性から PointをPID->x,y のdictに保持
-                areaarray = root.find(swns("空間属性"))
                 point_info = extractPoint(areaarray)
 
                 #主題属性から基準点に関する情報を得る（POINTカテゴリ）
-                syudaiarray = root.find(swns("主題属性"))
                 syudai_kijun_info = extractKijuntenFromSyudai(syudaiarray,point_info)
-                lines=[]
+                lines = []
                 for ski in syudai_kijun_info:
                     outary = [exec_name, fn, ski['point_no'], ski['shape'], ski['x'], ski['y'], ski['syubetu'], ski['maihyo'],'基準点']
                     lines.append(make_linestr_for_write(outary))
@@ -352,7 +323,7 @@ def main():
 
                 #主題属性から点番名に関する情報を得る（POINTカテゴリ）
                 fude_point_info = extractHikkaitenFromSyudai(syudaiarray,point_info)
-                lines=[]
+                lines = []
                 for fpi in fude_point_info:
                     outary = [exec_name, fn, fpi['point_no'], fpi['shape'], fpi['x'], fpi['y'], '', '','筆界点']
                     lines.append(make_linestr_for_write(outary))
@@ -363,7 +334,7 @@ def main():
                 hikkai_line_info = extractHikkaisenFromSyudai(syudaiarray)
                 #仮行政界線
                 gyousei_line_info = extractGyouseiLineFromSyudai(syudaiarray)
-                lines=[]
+                lines = []
                 for fpi in hikkai_line_info:
                     outary = [exec_name, fn,  fpi['shape'], fpi['line_type'],"筆界線"]
                     lines.append(make_linestr_for_write(outary))
@@ -375,7 +346,7 @@ def main():
 
                 #筆界線(空間属性)
                 curve_info = extractCurve(areaarray)
-                lines=[]
+                lines = []
                 for fpi in curve_info:
                     outary = [exec_name, fn,  fpi['curve_id'], fpi['x'], fpi['y'], fpi['point_id'], fpi['num']]
                     lines.append(make_linestr_for_write(outary))
@@ -383,17 +354,16 @@ def main():
 
                 # ----- SURFACE -----
                 surface_info = extractSurface(areaarray)
-                lines=[]
+                lines = []
                 for fpi in surface_info:
                     outary = [exec_name, fn,  fpi['surface_id'], fpi['line_id'], fpi['num']]
                     lines.append(make_linestr_for_write(outary))
                 write_lines(fout_surface, lines)
 
                 # ------ FUDE ------
-                #syudaiarray=root.find(swns("主題属性"))
                 fudearray = syudaiarray.findall(swns("筆"))
                 fude_info = extractFudeFromSyudai(fudearray)
-                lines=[]
+                lines = []
                 for fpi in fude_info:
                     outary = [exec_name, fn,  fpi['fude_id'], fpi['oaza'], fpi['chome'], fpi['koaza'], fpi['yobi'], fpi['oaza_name'], fpi['chome_name'], fpi['koaza_name'], fpi['yobi_name'], fpi['chiban'], fpi['shape'], fpi['seido_kbn'], fpi['zahyo_type']]
                     lines.append(make_linestr_for_write(outary))
@@ -403,14 +373,14 @@ def main():
                 # ------ ZUKAKU ------
                 zkkarray = root.findall(swns("図郭"))
                 (zkk_info, zkk_fuderef_info) = extractZkk(zkkarray)
-                lines=[]
+                lines = []
                 for fpi in zkk_info:
                     outary = [exec_name, fn, fpi['map_no'], fpi['scale'], fpi['unknown_direct_flg'], fpi['xLB'], fpi['yLB'], fpi['xLT'], fpi['yLT'], fpi['xRB'], fpi['yRB'], fpi['xRT'], fpi['yRT'], fpi['maptype'], fpi['mapcategory'], fpi['map_material'], fpi['yMAP'], fpi['mMAP'], fpi['dMAP'], fpi['ySET'], fpi['mSET'], fpi['dSET']]
                     lines.append(make_linestr_for_write(outary))
                 write_lines(fout_zukaku, lines)
 
                 #図郭_筆参照
-                lines=[]
+                lines = []
                 for fpi in zkk_fuderef_info:
                     outary = [exec_name, fn, fpi['map_no'], fpi['fude_ref']]
                     lines.append(make_linestr_for_write(outary))
