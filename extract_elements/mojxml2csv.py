@@ -1,9 +1,16 @@
 import os, sys
-import xml.etree.ElementTree as ET
 from zipfile import ZipFile
 #import xy2do
 import cProfile
 from functools import lru_cache
+
+try:
+    from lxml import etree
+    print("lxml module found. (exec faster!)")
+except ImportError:
+    import xml.etree.ElementTree as etree
+    print("No lxml module found. use xml_elementree(slower).")
+
 
 XMLNS="http://www.moj.go.jp/MINJI/tizuxml"
 XMLNS_ZMN="http://www.moj.go.jp/MINJI/tizuzumen"
@@ -128,16 +135,16 @@ def extractGyouseiLineFromSyudai(syudaiarray):
 
 # 空間属性:Curve
 def extractCurve(areaarray):
-    area_curve = areaarray.findall(swns_zmn("GM_Curve"))
-    curves_info = []  
-
     ptn_outer = f'{swns_zmn("GM_Curve.segment")}/{swns_zmn("GM_LineString")}/{swns_zmn("GM_LineString.controlPoint")}'
     ptn_inner = f'{swns_zmn("GM_Position.indirect")}/{swns_zmn("GM_PointRef.point")}'
+
+    area_curve = areaarray.findall(swns_zmn("GM_Curve"))
+    curves_info = []  
     for curve in area_curve:
         curve_id = curve.attrib["id"]
         cv3 = curve.find(ptn_outer)
         #cv4=cv3.find(swns_zmn("GM_PointArray.column"))
-        no=1
+        no = 1
         for cv in cv3:
             #directAddress
             (x,y) = getXY(cv, "GM_Position.direct", PRM_NS_ZMN)
@@ -146,7 +153,7 @@ def extractCurve(areaarray):
             point_id = ""
             cv5 = cv.find(ptn_inner)
             if (not cv5 is None):
-                point_id=cv5.attrib["idref"]
+                point_id = cv5.attrib["idref"]
 
             # cv5 = cv.find(swns_zmn("GM_Position.indirect"))
             # point_id = ""
@@ -165,16 +172,18 @@ def extractCurve(areaarray):
 
 # 空間属性 Surface
 def extractSurface(areaarray):
+    ptn = f'{swns_zmn("GM_Surface.patch")}/{swns_zmn("GM_Polygon")}/{swns_zmn("GM_Polygon.boundary")}/{swns_zmn("GM_SurfaceBoundary")}/{swns_zmn("GM_SurfaceBoundary.exterior")}/{swns_zmn("GM_Ring")}'
     area_surface = areaarray.findall(swns_zmn("GM_Surface"))
     surface_info = []   
     for surface in area_surface:
         surface_id = surface.attrib["id"]
-        sf1 = surface.find(swns_zmn("GM_Surface.patch"))
-        sf2 = sf1.find(swns_zmn("GM_Polygon"))
-        sf3 = sf2.find(swns_zmn("GM_Polygon.boundary"))
-        sf4 = sf3.find(swns_zmn("GM_SurfaceBoundary"))
-        sf5 = sf4.find(swns_zmn("GM_SurfaceBoundary.exterior"))
-        sf6 = sf5.find(swns_zmn("GM_Ring"))
+        # sf1 = surface.find(swns_zmn("GM_Surface.patch"))
+        # sf2 = sf1.find(swns_zmn("GM_Polygon"))
+        # sf3 = sf2.find(swns_zmn("GM_Polygon.boundary"))
+        # sf4 = sf3.find(swns_zmn("GM_SurfaceBoundary"))
+        # sf5 = sf4.find(swns_zmn("GM_SurfaceBoundary.exterior"))
+        # sf6 = sf5.find(swns_zmn("GM_Ring"))
+        sf6 = surface.find(ptn)
 
         no=1 
         for sf in sf6:
@@ -299,7 +308,7 @@ def main():
         #
         with ZipFile(root_path+"/"+fn) as zf:
             with zf.open(zf.namelist()[0]) as fd:
-                tree = ET.parse(fd)
+                tree = etree.parse(fd)
                 root = tree.getroot()
                 areaarray = root.find(swns("空間属性"))
                 syudaiarray = root.find(swns("主題属性"))
@@ -387,8 +396,8 @@ def main():
                 write_lines(fout_zukaku_ref, lines)
 
 
-#cProfile.run('main()')
-main()
+cProfile.run('main()')
+#main()
 
 # 実行例
 # sakaik@saty6:/mnt/f/mojxml/比較トライ/12千葉県$ python3 mojxml_extract_pointinfo.py 202404 202404 outtmp
