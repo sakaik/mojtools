@@ -225,6 +225,7 @@ def extractZkk(zkkarray):
     cnt = 0
     zkk_info = []
     zkk_fuderef_info = []
+    zkk_fuderef_info = []    
     for zkk in zkkarray:
         cnt += 1
         (xLB,yLB) = getXY(zkk, "左下座標")
@@ -258,7 +259,6 @@ def extractZkk(zkkarray):
         })
 
         fuderef = zkk.findall(swns("筆参照"))
-        zkk_fuderef_info = []    
         for fr in fuderef:
             zkk_fuderef_info.append({
                 'map_no': getText(zkk, "地図番号"),
