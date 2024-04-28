@@ -3,6 +3,7 @@ from zipfile import ZipFile
 #import xy2do
 import cProfile
 from functools import lru_cache
+import argparse
 
 try:
     from lxml import etree
@@ -388,22 +389,30 @@ def main(root_path, exec_name, outfilename_base):
 
 
 if __name__ == "__main__":
-    args = sys.argv
-    # param check (todo)
-    root_path = args[1]  #カレントを起点としたデータフォルダ名
-    exec_name = args[2]  #202404 とか 202308 など公開データ名などを指定
-    outfilename_base = args[3]  ## "./out3/"
+    parser = argparse.ArgumentParser(description="mojxml2csv: Extracting from mojxml files to tab-separated files")
+    parser.add_argument("-i", dest="input_dir", metavar="<INPUT_FOLDER>", help="")
+    parser.add_argument("-o", dest="output_dir", default="./", metavar="<OUTPUT_FOLDER>", help="")
+    parser.add_argument("-r", metavar="<RELEASE_VERSION_NAME>", help="Release version. It is used for column value and filename. ex)202404")
+    parser.add_argument("--profile", action="store_true", help="Execute with cProfile.")
+    args = parser.parse_args()
 
-    cProfile.run('main(root_path, exec_name, outfilename_base)')
-    #main(root_path, exec_name, outfilename_base)
+    root_path = args.input_dir
+    exec_name = args.r
+    out_path = args.output_dir
+    outfilename_base = out_path
+    #todo: フォルダ末尾の / の自動付加（または除去）処理
+    #todo: 出力ファイル接頭辞を指定可能にする（都道府県コードを指定する等の用途）
+    #todo: 出力したい項目を個別に指定できるようにしたい（どのように？）
 
+    if args.profile:
+      cProfile.run('main(root_path, exec_name, outfilename_base)')
+    else:
+      main(root_path, exec_name, outfilename_base)
 
-    #TODO: パラメタ確認処理等丁寧に
     #TODO: 今後は必要なファイルだけopenするよう（個別実行対応への道）
     #TODO: ちゃんとクローズする
 
 
 # 実行例
-# sakaik@saty6:/mnt/f/mojxml/比較トライ/12千葉県$ python3 mojxml_extract_pointinfo.py 202404 202404 outtmp
-# sakaik@saty6:/mnt/f/mojxml/比較トライ/12千葉県$ python3 mojxml_extract_pointinfo.py 202308 202308 outtmp 
-# sakaik@saty6:/mnt/f/mojxml/比較トライ/12千葉県$ python3 mojxml_extract_pointinfo.py 202301 202301 outtmp 
+# $ python3 mojxml_extract_pointinfo.py -i data202404 -r 202404 -o outtmp --profile
+# $ python3 mojxml_extract_pointinfo.py -i data202404 -r 202404 -o outtmp
