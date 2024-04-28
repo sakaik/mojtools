@@ -278,17 +278,7 @@ def write_lines(ofh, lines):
 
 
 
-def main():
-    args = sys.argv
-    # param check (todo)
-    root_path = args[1]  #カレントを起点としたデータフォルダ名
-    exec_name = args[2]  #202404 とか 202308 など公開データ名などを指定
-    #outfilename_base="./out3/"
-    outfilename_base = args[3]
-
-    #TODO: パラメタ確認処理等丁寧に
-    #TODO: 今後は必要なファイルだけopenするよう（個別実行対応への道）
-    #TODO: ちゃんとクローズする
+def main(root_path, exec_name, outfilename_base):
 
     fout_main = open(outfilename_base+f"{exec_name}_01main.tsv", "w")
     fout_points = open(outfilename_base+f"{exec_name}_11points_data.tsv", "w")
@@ -396,8 +386,22 @@ def main():
                 write_lines(fout_zukaku_ref, lines)
 
 
-cProfile.run('main()')
-#main()
+
+if __name__ == "__main__":
+    args = sys.argv
+    # param check (todo)
+    root_path = args[1]  #カレントを起点としたデータフォルダ名
+    exec_name = args[2]  #202404 とか 202308 など公開データ名などを指定
+    outfilename_base = args[3]  ## "./out3/"
+
+    cProfile.run('main(root_path, exec_name, outfilename_base)')
+    #main(root_path, exec_name, outfilename_base)
+
+
+    #TODO: パラメタ確認処理等丁寧に
+    #TODO: 今後は必要なファイルだけopenするよう（個別実行対応への道）
+    #TODO: ちゃんとクローズする
+
 
 # 実行例
 # sakaik@saty6:/mnt/f/mojxml/比較トライ/12千葉県$ python3 mojxml_extract_pointinfo.py 202404 202404 outtmp
