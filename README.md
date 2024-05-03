@@ -13,15 +13,27 @@ csvじゃなくてtsvなので名前変えようと思ってたのですが、ts
 ### 使用法
 パラメタ処理は雑なので、最後のスラッシュの要否等は何回か動かしながら把握してください（ぺこり）。今後変わります。
 
+```
+usage: mojxml2csv.py [-h] [-i <INPUT_FOLDER>] [-o <OUTPUT_FOLDER>] [-r <RELEASE_VERSION_NAME>] [--profile]
 
-python3 mojxml2csv.py <<DATA_FOLDER>> <<公開回>> <<出力フォルダ>>
+mojxml2csv: Extracting from mojxml files to tab-separated files
 
-例）data/12_chiba/ 202404  out/
+optional arguments:
+  -h, --help            show this help message and exit
+  -i <INPUT_FOLDER>
+  -o <OUTPUT_FOLDER>
+  -r <RELEASE_VERSION_NAME>
+                        Release version. It is used for column value and filename. ex)202404
+  --profile             Execute with cProfile.
+```
+
+例）python3 mojxml_extract_pointinfo.py -i data202404 -r 202404 -o outtmp --profile
 
 
 ### 実行時間とサイズの例
-実行時間はかなりかかります（今後多少改善予定）。
+実行時間はかなりかかります。
 都道府県単位で処理する場合は、小さい都道府県で40分程度、大きいと2～3時間かかります。
+lxmlモジュールをインストール済みの場合、そちらを使用して多少高速に動作します（pipでインストール可能です）。
 
 - 出力ファイルサイズ例
     - 千葉県の例
